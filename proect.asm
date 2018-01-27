@@ -92,9 +92,9 @@ start:
         
         proveritekst:
         ;AKO NE E NITU + NITU - NITU BROJ, PROVERKA DALI E TEKST
-        cmp AL,065h ;; Asci kod za A
+        cmp AL,041h ;; Asci kod za A
         jl barajprvacifra
-        cmp AL,090h
+        cmp AL,5Ah
         jg barajprvacifra ;; Ako ne e nitu tekst, nitu +, nitu -,nitu broj, togas baraj novi cifri 
         
         ;; ZNACI E TEKST  
@@ -112,29 +112,29 @@ start:
         int 21h 
         
         ; dali e XXtext+
-        cmp AL, 43h
+        cmp AL, 2Bh
         je krajtekst
         
         ; dali e XXtextX(proverka dali e vnesen broj izmegju textot, sto bi bilo invalid command)
-        cmp AL,57h
-        jge proveribukva ;; >9 znaci ne e broj 
-        cmp AL,48h        
+        cmp AL,39h
+        jg proveribukva ;; >9 znaci ne e broj 
+        cmp AL,30h        
         jl barajprvacifra   ;;<0 ne e broj nitu bukva(asci kod e > od 48h za bukvite)
         
         
         ;;OVOJ DEL E VO SLUCAJ DA E BROJ, proverka dali e <2:
-        cmp AL,50h
+        cmp AL,32h
         jge barajprvacifra;; ako e>=2 
-        sub AL,48h
+        sub AL,30h
         mov x1,AL
         jmp barajvtoracifra;; ako e < 2. 
         
         
         proveribukva:
             ;; PROVERKA DALI E BUKVA
-            cmp AL,065h ;; C< 65 Asci kod za A  
+            cmp AL,41h ;; C< 65 Asci kod za A  
             jl barajprvacifra
-            cmp AL,090h
+            cmp AL,5Ah
             jg barajprvacifra ;C> 90 ASCII kod za Z
             
             ;;AKO E BUKVA:
@@ -157,17 +157,17 @@ start:
    proveriminusposleplus: 
         mov AH,01h      ;; citaj uste eden karakter
         int 21h 
-        cmp AL,45h; Proveri dali imame XX+- komanda
+        cmp AL,2Dh; Proveri dali imame XX+- komanda
         je procitajporaka ;; ako imame odi na delot procitajporaka    
         mov x1,0          ;;Ako nemame XX+-(imame samo XX+C , sto ne znaci nisto, no morame da proverime dali C e 0 ili 1)
         mov x2,0          ;;reset
         mov redenbroj,0d
         ;;;;;;;;;;; PROVERKA DALI PROCITANIOT KARAKTER C E BROJ < 2 (BIDEJKI NE E MINUS A VEKJE SME GO PROCITALE)
-        cmp AL,50h
+        cmp AL,32h
         jge barajprvacifra  ;; ako prvata cifra e >= 2 ( t.e ako brojot na porakata e >=20) 
-        cmp AL,47h        ;; ako e < 0
-        jle barajprvacifra    
-        sub AL,48h 
+        cmp AL,30h        ;; ako e < 0
+        jl barajprvacifra    
+        sub AL,30h 
         mov x1,AL     
         jmp barajvtoracifra    ;; vlezot bil XX+C, kade C = 0 ili 1 , pa go iskoristuvame da barame nova komanda.
         
@@ -182,15 +182,15 @@ start:
        
        mov AH,01h
        int 21h
-       cmp AL,45h ; dali imame dva minusi za kraj
+       cmp AL,2Dh ; dali imame dva minusi za kraj
        je kraj 
        ;; ako ne e kraj(ako ne e XX-- proveri dali e broj izmegju 0 i 2)
-       cmp AL,50h
+       cmp AL,32h
        jge barajprvacifra;; ako e>=2  
-       cmp AL,48h
+       cmp AL,30h
        jl barajprvacifra ;<0
        
-       sub AL,48h;odzemame brojceto
+       sub AL,30h;odzemame brojceto
        mov x1,AL
        jmp barajvtoracifra;; imame vekje brojce izmegju 0 i 2 :)
        
