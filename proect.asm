@@ -13,6 +13,8 @@ data segment
     N dw 100d
     x1 db 0d
     x2 db 0d 
+    nizaporaka dw 20 dup (?) 
+    redenbroj dw 0d
 ends
 
 stack segment
@@ -26,23 +28,31 @@ start:
     mov ds, ax
     mov es, ax
     
-    ;; Ova funkcionira na nacin vakov : Baraj prva cifra, ako najdes prva cifra baraj vtora cifra, ako najdes proveri dali e komanda nekoja ili vnesuvanje na tekst
+    ;; Ova funkcionira na nacin vakov : Baraj prva cifra, ako najdes prva cifra baraj vtora cifra, ako najdes proveri dali e XXText+, XX+-, XX- ili ostanato.
     barajprvacifra:
+    
+    ;;RESET
+        mov redenbroj,0h
+        mov x1,0h
+        mov x2,0h
+        
+        
+        
         mov AH,01h
         int 21h
-        sub AL,48h 
-        
-        mov x1,AL
-        cmp AL,2
+        mov AH,0h 
+        sub AL,30h
+        cmp AX,2
         jge barajprvacifra  ;; ako prvata cifra e >= 2 ( t.e ako brojot na porakata e >=20) 
-        cmp AL,0        ;; ako e < 0
-        jl barajprvacifra 
+        cmp AX,0        ;; ako e < 0
+        jl barajprvacifra
+         
         mov x1, AL         ; AKO cifrata e 0 ili 1
      
     barajvtoracifra:    
         mov AH,01h
         int 21h
-        sub AL,48h 
+        sub AL,30h 
         
         cmp AL,0 ;; proverka dali e broj vtoratacifra
         jl barajprvacifra
@@ -50,37 +60,96 @@ start:
         jg barajprvacifra
         mov x2,AL        ;; AKO E IzMEGJU 0 i 9
         
+        mov AL,x1
+        mov BL,10d
+        mul BL;; pomnozi prva cifra od redniot broj so 10 
+        add AL,x2 ;; dodaj vtorata cifra od redniot broj
+        mov redenbroj,AX
+        
    
    procitanidvecifri:
         mov AH,01h
         int 21h
-        cmp AL,45h ; DALI E -   
+    
+        cmp AL,2Dh ; DALI E XX-   
         je izbrisiporaka
-        cmp AL,43h ; DALI E + 
+        cmp AL,2Bh ; DALI E XX+ 
         je proveriminusposleplus  
         
-        ;AKO NE E NITU + NITU - PROVERKA DALI E TEKST
+        ;;PROVERKA DALI E BROJ, bidejki ne e -/+
+        cmp AL,30h ;; < 0
+        jl barajprvacifra
+        cmp AL,39h ;; > 9
+        jg proveritekst
+        
+        cmp AL,32h        
+        jge barajprvacifra ; brojce>2
+         
+        ; brojce<2 i brojce>0
+        sub AL,30h
+        mov x1,AL
+        jmp barajvtoracifra  ;AKO E BROJCE posle XX,t.e XXX i e <2 a >=0 togas odi baraj vtora cifra
+        
+        proveritekst:
+        ;AKO NE E NITU + NITU - NITU BROJ, PROVERKA DALI E TEKST
         cmp AL,065h ;; Asci kod za A
         jl barajprvacifra
         cmp AL,090h
-        jg barajprvacifra ;; Ako ne e nitu tekst, nitu +, nitu -, togas baraj novi cifri 
+        jg barajprvacifra ;; Ako ne e nitu tekst, nitu +, nitu -,nitu broj, togas baraj novi cifri 
         
-        ;; AKO E TEKST  
+        ;; ZNACI E TEKST  
         
-        
+        ;; TODO: kriptiraj character i vnesi vo memorija/stek/niza
+        lea BX,nizaporaka
+        mov [BX],AL
+        add BX,2  
         jmp najdovmetekst
         
    najdovmetekst: 
    
         
         MOV AH,01h
-        int 21h
-        cmp AL, 43h; dali e +
-        je krajtekst 
+        int 21h 
         
-        mov
+        ; dali e XXtext+
+        cmp AL, 43h
+        je krajtekst
         
-   krajtekst:
+        ; dali e XXtextX(proverka dali e vnesen broj izmegju textot, sto bi bilo invalid command)
+        cmp AL,57h
+        jge proveribukva ;; >9 znaci ne e broj 
+        cmp AL,48h        
+        jl barajprvacifra   ;;<0 ne e broj nitu bukva(asci kod e > od 48h za bukvite)
+        
+        
+        ;;OVOJ DEL E VO SLUCAJ DA E BROJ, proverka dali e <2:
+        cmp AL,50h
+        jge barajprvacifra;; ako e>=2 
+        sub AL,48h
+        mov x1,AL
+        jmp barajvtoracifra;; ako e < 2. 
+        
+        
+        proveribukva:
+            ;; PROVERKA DALI E BUKVA
+            cmp AL,065h ;; C< 65 Asci kod za A  
+            jl barajprvacifra
+            cmp AL,090h
+            jg barajprvacifra ;C> 90 ASCII kod za Z
+            
+            ;;AKO E BUKVA:
+            ;;TODO: KRIPTIRAJ CHARACTER I VNESI VO NIZA/MEMORIJA
+            mov [BX],AL
+            add BX,2
+            jmp najdovmetekst  
+        
+        
+         
+      
+        
+        
+        
+ 
        
         
         
@@ -92,36 +161,46 @@ start:
         je procitajporaka ;; ako imame odi na delot procitajporaka    
         mov x1,0          ;;Ako nemame XX+-(imame samo XX+C , sto ne znaci nisto, no morame da proverime dali C e 0 ili 1)
         mov x2,0          ;;reset
-        
+        mov redenbroj,0d
         ;;;;;;;;;;; PROVERKA DALI PROCITANIOT KARAKTER C E BROJ < 2 (BIDEJKI NE E MINUS A VEKJE SME GO PROCITALE)
         cmp AL,50h
         jge barajprvacifra  ;; ako prvata cifra e >= 2 ( t.e ako brojot na porakata e >=20) 
         cmp AL,47h        ;; ako e < 0
         jle barajprvacifra    
+        sub AL,48h 
         mov x1,AL     
         jmp barajvtoracifra    ;; vlezot bil XX+C, kade C = 0 ili 1 , pa go iskoristuvame da barame nova komanda.
         
         
         
-   procitajporaka:
-   
-   
-   
-        
-        
+ 
+   procitajporaka: 
+   ;;TODO: PROCITAJ PORAKA
+    
    izbrisiporaka:                                                
-   
-       ; OVDE NAJDI JA PORAKATA SO REDEN BROJ X1*10 + X2 i izbrisi ja
-          
+       ; TODO:OVDE NAJDI JA PORAKATA SO REDEN BROJ X1*10 + X2 i izbrisi ja
+       
        mov AH,01h
        int 21h
        cmp AL,45h ; dali imame dva minusi za kraj
-       je kraj
+       je kraj 
+       ;; ako ne e kraj(ako ne e XX-- proveri dali e broj izmegju 0 i 2)
+       cmp AL,50h
+       jge barajprvacifra;; ako e>=2  
+       cmp AL,48h
+       jl barajprvacifra ;<0
+       
+       sub AL,48h;odzemame brojceto
+       mov x1,AL
+       jmp barajvtoracifra;; imame vekje brojce izmegju 0 i 2 :)
+       
+       
+       
+       
    
-   
-   
-   
-   
+     
+     krajtekst: 
+        jmp barajprvacifra
         
         
        
