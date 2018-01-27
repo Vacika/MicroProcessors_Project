@@ -102,7 +102,7 @@ start:
         ;; TODO: kriptiraj character i vnesi vo memorija/stek/niza
         lea BX,nizaporaka
         mov [BX],AL
-        add BX,2  
+        add BX,1  
         jmp najdovmetekst
         
    najdovmetekst: 
