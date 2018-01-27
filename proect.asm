@@ -30,19 +30,23 @@ start:
     barajprvacifra:
         mov AH,01h
         int 21h
+        sub AL,48h 
+        
         mov x1,AL
-        cmp AL,50h
+        cmp AL,2
         jge barajprvacifra  ;; ako prvata cifra e >= 2 ( t.e ako brojot na porakata e >=20) 
-        cmp AL,47h        ;; ako e < 0
-        jle barajprvacifra 
+        cmp AL,0        ;; ako e < 0
+        jl barajprvacifra 
         mov x1, AL         ; AKO cifrata e 0 ili 1
      
     barajvtoracifra:    
         mov AH,01h
         int 21h
-        cmp AL,48h ;; proverka dali e broj vtoratacifra
+        sub AL,48h 
+        
+        cmp AL,0 ;; proverka dali e broj vtoratacifra
         jl barajprvacifra
-        cmp AL,57h ;; > 9
+        cmp AL,9 ;; > 9
         jg barajprvacifra
         mov x2,AL        ;; AKO E IzMEGJU 0 i 9
         
@@ -59,7 +63,25 @@ start:
         cmp AL,065h ;; Asci kod za A
         jl barajprvacifra
         cmp AL,090h
-        jg barajprvacifra ;; Ako ne e nitu tekst, nitu +, nitu -, togas baraj novi cifri
+        jg barajprvacifra ;; Ako ne e nitu tekst, nitu +, nitu -, togas baraj novi cifri 
+        
+        ;; AKO E TEKST  
+        
+        
+        jmp najdovmetekst
+        
+   najdovmetekst: 
+   
+        
+        MOV AH,01h
+        int 21h
+        cmp AL, 43h; dali e +
+        je krajtekst 
+        
+        mov
+        
+   krajtekst:
+       
         
         
         
